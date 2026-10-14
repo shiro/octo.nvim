@@ -61,6 +61,10 @@ function CommentPopup:open()
     return
   end
 
+  -- Save original window and cursor position
+  local orig_win = vim.api.nvim_get_current_win()
+  local orig_pos = vim.api.nvim_win_get_cursor(orig_win)
+
   local bufnr = self.bufnr
   local line_count = vim.api.nvim_buf_line_count(bufnr)
   
@@ -105,15 +109,24 @@ function CommentPopup:open()
   vim.api.nvim_create_autocmd("WinLeave", {
     buffer = self.bufnr,
     callback = function()
-      self:close()
+      self:close_and_restore(orig_win, orig_pos)
     end,
     once = true,
   })
 
   -- Set 'q' to close popup
   vim.keymap.set("n", "q", function()
-    self:close()
+    self:close_and_restore(orig_win, orig_pos)
   end, { buffer = self.bufnr, noremap = true })
+end
+
+---Close popup and restore original window position
+function CommentPopup:close_and_restore(orig_win, orig_pos)
+  self:close()
+  if vim.api.nvim_win_is_valid(orig_win) then
+    pcall(vim.api.nvim_set_current_win, orig_win)
+    pcall(vim.api.nvim_win_set_cursor, orig_win, orig_pos)
+  end
 end
 
 ---Close popup and cleanup
