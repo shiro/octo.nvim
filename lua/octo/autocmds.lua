@@ -64,13 +64,7 @@ function M.setup()
     end,
   })
   if config.values.reviews.auto_show_threads then
-    define({ "CursorMoved" }, {
-      group = "octo_autocmds",
-      pattern = { "*" },
-      callback = function()
-        require("octo.reviews.thread-panel").show_review_threads(false)
-      end,
-    })
+    -- Auto-show threads disabled - use show_threads keybind instead
   end
   define({ "TabClosed" }, {
     group = "octo_autocmds",

@@ -567,4 +567,7 @@ return {
       layout.file_panel:get_file_at_cursor():toggle_viewed()
     end
   end,
+  show_threads = function()
+    require("octo.reviews.thread-panel").show_review_threads()
+  end,
 }

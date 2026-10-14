@@ -519,6 +519,7 @@ function M.get_default_values()
         goto_file = { lhs = "gf", desc = "go to file" },
         copy_sha = { lhs = "<C-e>", desc = "copy commit SHA to system clipboard" },
         review_commits = { lhs = "<localleader>C", desc = "review PR commits" },
+        show_threads = { lhs = "<cr>", desc = "show review threads" },
       },
       file_panel = {
         submit_review = { lhs = "<localleader>vs", desc = "submit review" },

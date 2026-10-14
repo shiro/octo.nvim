@@ -4,27 +4,22 @@ local vim = vim
 
 local M = {}
 
----Show review threads under cursor if there are any
----@param jump_to_buffer boolean
-function M.show_review_threads(jump_to_buffer)
-  -- This function is called from a very broad CursorHold event
-  -- Check if we are in a diff buffer and otherwise return early
+---Show review threads at cursor (triggered by keybind)
+function M.show_review_threads()
+  -- Check if we are in a diff buffer
   local bufnr = vim.api.nvim_get_current_buf()
   local split, path = utils.get_split_and_path(bufnr)
   if not split or not path then
-    -- not on a diff buffer
     return
   end
 
   local review = require("octo.reviews").get_current_review()
   if not review then
-    -- cant find an active review
     return
   end
 
   local file = review.layout:get_current_file()
   if not file then
-    -- cant find the changed file metadata
     return
   end
 
@@ -34,7 +29,7 @@ function M.show_review_threads(jump_to_buffer)
   local threads = vim.tbl_values(review.threads)
   local line = vim.api.nvim_win_get_cursor(0)[1]
 
-  -- get threads associated with current line
+  -- Get threads at current line
   local threads_at_cursor = {}
   for _, thread in ipairs(threads) do
     if
@@ -58,37 +53,21 @@ function M.show_review_threads(jump_to_buffer)
     end
   end
 
-  -- render thread buffer if there are threads at the current line
   if #threads_at_cursor > 0 then
-    review.layout:ensure_layout()
-    local alt_win = file:get_alternative_win(split)
-    if vim.api.nvim_win_is_valid(alt_win) then
-      local thread_buffer = M.create_thread_buffer(threads_at_cursor, pr.repo, pr.number, split, file.path)
-      if thread_buffer then
-        table.insert(file.associated_bufs, thread_buffer.bufnr)
-        vim.api.nvim_win_set_buf(alt_win, thread_buffer.bufnr)
-        thread_buffer:configure()
-
-        vim.keymap.set("n", "q", function()
-          M.hide_thread_buffer(split, file)
-          local file_win = file:get_win(split)
-          if vim.api.nvim_win_is_valid(file_win) then
-            vim.api.nvim_set_current_win(file_win)
-          end
-        end, { buffer = thread_buffer.bufnr })
-
-        if jump_to_buffer then
-          vim.api.nvim_set_current_win(alt_win)
-        end
-        vim.api.nvim_buf_call(thread_buffer.bufnr, function()
-          vim.cmd [[diffoff!]]
-          pcall(vim.cmd.normal, "]c")
-        end)
-      end
+    local popup = require("octo.ui.comment-popup").CommentPopup:new {
+      threads = threads_at_cursor,
+      repo = pr.repo,
+      number = pr.number,
+      side = split,
+      path = file.path,
+    }
+    popup:open()
+    if file.current_popup then
+      file.current_popup:close()
     end
+    file.current_popup = popup
   else
-    -- no threads at the current line, hide the thread buffer
-    M.hide_thread_buffer(split, file)
+    utils.info "No review threads on this line"
   end
 end
 
